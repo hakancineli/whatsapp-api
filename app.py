@@ -191,72 +191,42 @@ def test_messages():
             "Content-Type": "application/json"
         }
         
-        # Son 1 ay için tarih hesapla
-        bir_ay_once = datetime.now() - timedelta(days=30)
-        bir_ay_once_str = bir_ay_once.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+        # Önce channels endpoint'ini test edelim
+        print('\nChannels testi yapılıyor...')
+        channels_response = requests.get(
+            f"{API_URL}/channels",
+            headers=headers
+        )
+        print('Channels yanıt durumu:', channels_response.status_code)
+        print('Channels yanıt içeriği:', channels_response.text)
         
-        print('API isteği yapılıyor:', f"{API_URL}/messages")
-        print('Headers:', headers)
+        # Sonra contacts endpoint'ini test edelim
+        print('\nContacts testi yapılıyor...')
+        contacts_response = requests.get(
+            f"{API_URL}/contacts",
+            headers=headers
+        )
+        print('Contacts yanıt durumu:', contacts_response.status_code)
+        print('Contacts yanıt içeriği:', contacts_response.text)
         
-        # Messages API'yi çağır
-        response = requests.get(
+        # Son olarak messages endpoint'ini test edelim
+        print('\nMessages testi yapılıyor...')
+        messages_response = requests.get(
             f"{API_URL}/messages",
             headers=headers
         )
+        print('Messages yanıt durumu:', messages_response.status_code)
+        print('Messages yanıt içeriği:', messages_response.text)
         
-        print('API yanıt durumu:', response.status_code)
-        print('API yanıt başlıkları:', response.headers)
-        print('API yanıt içeriği:', response.text)
-        
-        if response.status_code == 200:
-            data = response.json()
-            
-            # Tüm yanıtı logla
-            print("\nTüm API Yanıtı:")
-            print(json.dumps(data, indent=2))
-            
-            if 'messages' in data and isinstance(data['messages'], list):
-                messages = data['messages']
-                print(f"\nToplam mesaj sayısı: {len(messages)}")
-                
-                # Mesajları gelen ve giden olarak ayır
-                incoming = [msg for msg in messages if msg.get('type') == 'text' and msg.get('from')]
-                outgoing = [msg for msg in messages if msg.get('type') == 'text' and msg.get('to')]
-                
-                print("\nGelen son 5 mesaj:")
-                for msg in incoming[-5:]:
-                    print(f"Kimden: {msg.get('from')}")
-                    print(f"Mesaj: {msg.get('text', {}).get('body')}")
-                    print(f"Zaman: {msg.get('timestamp')}")
-                    print("---")
-                
-                print("\nGiden son 5 mesaj:")
-                for msg in outgoing[-5:]:
-                    print(f"Kime: {msg.get('to')}")
-                    print(f"Mesaj: {msg.get('text', {}).get('body')}")
-                    print(f"Zaman: {msg.get('timestamp')}")
-                    print("---")
-                
-                return jsonify({
-                    "total_messages": len(messages),
-                    "incoming_messages": len(incoming),
-                    "outgoing_messages": len(outgoing),
-                    "last_5_incoming": incoming[-5:],
-                    "last_5_outgoing": outgoing[-5:]
-                }), 200
-            else:
-                return jsonify({"error": "Mesaj bulunamadı"}), 404
-                
-        else:
-            error_message = f"API Hatası: Status Code {response.status_code}"
-            try:
-                error_data = response.json()
-                error_message += f", Response: {json.dumps(error_data)}"
-            except:
-                error_message += f", Response Text: {response.text}"
-            
-            print(error_message)
-            return jsonify({"error": "Mesajlar alınamadı", "details": error_message}), response.status_code
+        # Tüm sonuçları döndür
+        return jsonify({
+            "channels_status": channels_response.status_code,
+            "channels_data": channels_response.json() if channels_response.status_code == 200 else None,
+            "contacts_status": contacts_response.status_code,
+            "contacts_data": contacts_response.json() if contacts_response.status_code == 200 else None,
+            "messages_status": messages_response.status_code,
+            "messages_data": messages_response.json() if messages_response.status_code == 200 else None
+        }), 200
             
     except Exception as e:
         error_message = f"Hata: {str(e)}"
