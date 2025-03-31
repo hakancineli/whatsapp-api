@@ -44,12 +44,12 @@ def get_all_messages():
     try:
         headers = get_headers()
         
-        print('API isteği yapılıyor:', f"{API_URL}/v1/messages")
+        print('API isteği yapılıyor:', f"{API_URL}/v1/business/messages")
         print('Headers:', headers)
         
         # Messages API'yi çağır
         response = requests.get(
-            f"{API_URL}/v1/messages",
+            f"{API_URL}/v1/business/messages",
             headers=headers
         )
         
@@ -57,7 +57,12 @@ def get_all_messages():
         print('API yanıtı:', response.text)
         
         if response.status_code == 200:
-            return jsonify(response.json())
+            # Mesajları yükle
+            messages_data = load_messages()
+            return jsonify({
+                'api_messages': response.json(),
+                'local_messages': messages_data
+            })
         else:
             return jsonify({
                 'status': 'error',
