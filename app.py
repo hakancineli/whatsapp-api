@@ -44,12 +44,12 @@ def get_all_messages():
     try:
         headers = get_headers()
         
-        print('API isteği yapılıyor:', f"{API_URL}/v1/business/messages")
+        print('API isteği yapılıyor:', f"{API_URL}/v1/messages/notifications")
         print('Headers:', headers)
         
         # Messages API'yi çağır
         response = requests.get(
-            f"{API_URL}/v1/business/messages",
+            f"{API_URL}/v1/messages/notifications",
             headers=headers
         )
         
