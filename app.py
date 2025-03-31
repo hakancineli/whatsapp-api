@@ -95,17 +95,30 @@ def send_message():
         }
         
         print('Mesaj gönderiliyor:', payload)
+        print('Headers:', headers)
         
         response = requests.post(
-            f"{API_URL}/v1/messages",
+            f"{API_URL}/messages",
             headers=headers,
             json=payload
         )
         
         print('API yanıt durumu:', response.status_code)
-        print('API yanıtı:', response.text)
+        print('API yanıt başlıkları:', response.headers)
+        print('API yanıt içeriği:', response.text)
         
-        return jsonify(response.json()), response.status_code
+        if response.status_code == 200:
+            return jsonify(response.json()), 200
+        else:
+            error_message = f"API Hatası: Status Code {response.status_code}"
+            try:
+                error_data = response.json()
+                error_message += f", Response: {json.dumps(error_data)}"
+            except:
+                error_message += f", Response Text: {response.text}"
+            
+            print(error_message)
+            return jsonify({"error": "Mesaj gönderilemedi", "details": error_message}), response.status_code
         
     except Exception as e:
         error_message = f"Hata: {str(e)}"
@@ -182,16 +195,18 @@ def test_messages():
         bir_ay_once = datetime.now() - timedelta(days=30)
         bir_ay_once_str = bir_ay_once.strftime('%Y-%m-%dT%H:%M:%S.000Z')
         
-        print('API isteği yapılıyor:', f"{API_URL}/api/v1/messages?after={bir_ay_once_str}")
+        print('API isteği yapılıyor:', f"{API_URL}/messages")
         print('Headers:', headers)
         
         # Messages API'yi çağır
         response = requests.get(
-            f"{API_URL}/api/v1/messages?after={bir_ay_once_str}",
+            f"{API_URL}/messages",
             headers=headers
         )
         
         print('API yanıt durumu:', response.status_code)
+        print('API yanıt başlıkları:', response.headers)
+        print('API yanıt içeriği:', response.text)
         
         if response.status_code == 200:
             data = response.json()
