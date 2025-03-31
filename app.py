@@ -44,12 +44,12 @@ def get_all_messages():
     try:
         headers = get_headers()
         
-        print('API isteği yapılıyor:', f"{API_URL}/v1/configs/webhook")
+        print('API isteği yapılıyor:', f"{API_URL}/v1/messages")
         print('Headers:', headers)
         
         # Messages API'yi çağır
         response = requests.get(
-            f"{API_URL}/v1/configs/webhook",
+            f"{API_URL}/v1/messages",
             headers=headers
         )
         
