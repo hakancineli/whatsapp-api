@@ -169,6 +169,85 @@ def check_webhook():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/test-messages', methods=['GET'])
+def test_messages():
+    try:
+        print('Test: Son mesajlar kontrol ediliyor...')
+        headers = {
+            "D360-API-KEY": API_KEY,
+            "Content-Type": "application/json"
+        }
+        
+        # Son 1 ay için tarih hesapla
+        bir_ay_once = datetime.now() - timedelta(days=30)
+        bir_ay_once_str = bir_ay_once.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+        
+        print('API isteği yapılıyor:', f"{API_URL}/api/v1/messages?after={bir_ay_once_str}")
+        print('Headers:', headers)
+        
+        # Messages API'yi çağır
+        response = requests.get(
+            f"{API_URL}/api/v1/messages?after={bir_ay_once_str}",
+            headers=headers
+        )
+        
+        print('API yanıt durumu:', response.status_code)
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Tüm yanıtı logla
+            print("\nTüm API Yanıtı:")
+            print(json.dumps(data, indent=2))
+            
+            if 'messages' in data and isinstance(data['messages'], list):
+                messages = data['messages']
+                print(f"\nToplam mesaj sayısı: {len(messages)}")
+                
+                # Mesajları gelen ve giden olarak ayır
+                incoming = [msg for msg in messages if msg.get('type') == 'text' and msg.get('from')]
+                outgoing = [msg for msg in messages if msg.get('type') == 'text' and msg.get('to')]
+                
+                print("\nGelen son 5 mesaj:")
+                for msg in incoming[-5:]:
+                    print(f"Kimden: {msg.get('from')}")
+                    print(f"Mesaj: {msg.get('text', {}).get('body')}")
+                    print(f"Zaman: {msg.get('timestamp')}")
+                    print("---")
+                
+                print("\nGiden son 5 mesaj:")
+                for msg in outgoing[-5:]:
+                    print(f"Kime: {msg.get('to')}")
+                    print(f"Mesaj: {msg.get('text', {}).get('body')}")
+                    print(f"Zaman: {msg.get('timestamp')}")
+                    print("---")
+                
+                return jsonify({
+                    "total_messages": len(messages),
+                    "incoming_messages": len(incoming),
+                    "outgoing_messages": len(outgoing),
+                    "last_5_incoming": incoming[-5:],
+                    "last_5_outgoing": outgoing[-5:]
+                }), 200
+            else:
+                return jsonify({"error": "Mesaj bulunamadı"}), 404
+                
+        else:
+            error_message = f"API Hatası: Status Code {response.status_code}"
+            try:
+                error_data = response.json()
+                error_message += f", Response: {json.dumps(error_data)}"
+            except:
+                error_message += f", Response Text: {response.text}"
+            
+            print(error_message)
+            return jsonify({"error": "Mesajlar alınamadı", "details": error_message}), response.status_code
+            
+    except Exception as e:
+        error_message = f"Hata: {str(e)}"
+        print(error_message)
+        return jsonify({"error": error_message}), 500
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port) 
