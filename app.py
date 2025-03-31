@@ -69,7 +69,7 @@ def send_message():
         }
         
         response = requests.post(
-            f"{API_URL}/messages",
+            f"{API_URL}/v1/messages",
             headers=headers,
             json=payload
         )
@@ -159,7 +159,7 @@ def update_webhook():
         }
         
         response = requests.post(
-            f"{API_URL}/configs/webhook",
+            f"{API_URL}/v1/configs/webhook",
             headers=headers,
             json=payload
         )
@@ -178,7 +178,7 @@ def check_webhook():
         }
         
         response = requests.get(
-            f"{API_URL}/configs/webhook",
+            f"{API_URL}/v1/configs/webhook",
             headers=headers
         )
         
@@ -199,7 +199,7 @@ def test_messages():
         # Önce channels endpoint'ini test edelim
         print('\nChannels testi yapılıyor...')
         channels_response = requests.get(
-            f"{API_URL}/channels",
+            f"{API_URL}/v1/channels",
             headers=headers
         )
         print('Channels yanıt durumu:', channels_response.status_code)
@@ -208,7 +208,7 @@ def test_messages():
         # Sonra contacts endpoint'ini test edelim
         print('\nContacts testi yapılıyor...')
         contacts_response = requests.get(
-            f"{API_URL}/contacts",
+            f"{API_URL}/v1/contacts",
             headers=headers
         )
         print('Contacts yanıt durumu:', contacts_response.status_code)
@@ -217,7 +217,7 @@ def test_messages():
         # Son olarak messages endpoint'ini test edelim
         print('\nMessages testi yapılıyor...')
         messages_response = requests.get(
-            f"{API_URL}/messages",
+            f"{API_URL}/v1/messages",
             headers=headers
         )
         print('Messages yanıt durumu:', messages_response.status_code)
@@ -252,7 +252,7 @@ def test_api():
         
         # Messages API'yi çağır
         response = requests.get(
-            f"{API_URL}/messages",
+            f"{API_URL}/v1/messages",
             headers=headers
         )
         
@@ -299,7 +299,7 @@ def setup_webhook():
         print('Headers:', headers)
         
         response = requests.post(
-            f"{API_URL}/configs/webhook",
+            f"{API_URL}/v1/configs/webhook",
             headers=headers,
             json=payload
         )
