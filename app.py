@@ -31,11 +31,7 @@ def save_messages(messages):
 
 def get_headers():
     return {
-        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVJ9.e",
-        "d360-api-key": API_KEY,
-        "Accept": "*/*",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Connection": "keep-alive",
+        "D360-API-KEY": API_KEY,
         "Content-Type": "application/json"
     }
 
@@ -43,14 +39,13 @@ def get_headers():
 def get_all_messages():
     try:
         headers = get_headers()
-        channel_id = "570676119468253"
         
-        print('API isteği yapılıyor:', f"{API_URL}/v1/channels/{channel_id}/messages")
+        print('API isteği yapılıyor:', f"{API_URL}/messages")
         print('Headers:', headers)
         
         # Messages API'yi çağır
         response = requests.get(
-            f"{API_URL}/v1/channels/{channel_id}/messages",
+            f"{API_URL}/messages",
             headers=headers
         )
         
@@ -58,12 +53,7 @@ def get_all_messages():
         print('API yanıtı:', response.text)
         
         if response.status_code == 200:
-            # Mesajları yükle
-            messages_data = load_messages()
-            return jsonify({
-                'api_messages': response.json(),
-                'local_messages': messages_data
-            })
+            return jsonify(response.json())
         else:
             return jsonify({
                 'status': 'error',
@@ -93,35 +83,30 @@ def send_message():
             
         headers = get_headers()
         
+        # Template mesajı gönder
         payload = {
             "messaging_product": "whatsapp",
             "recipient_type": "individual",
             "to": phone_number,
-            "type": "text",
-            "text": {
-                "body": message
+            "type": "template",
+            "template": {
+                "name": "pro_transfer",
+                "language": {
+                    "code": "ar"
+                }
             }
         }
         
         response = requests.post(
-            f"{API_URL}/v1/messages",
+            f"{API_URL}/messages",
             headers=headers,
             json=payload
         )
         
+        print('API yanıt durumu:', response.status_code)
+        print('API yanıtı:', response.text)
+        
         if response.status_code == 200:
-            # Gönderilen mesajı kaydet
-            messages_data = load_messages()
-            new_message = {
-                'id': response.json().get('messages', [{}])[0].get('id', ''),
-                'to': phone_number,
-                'text': message,
-                'timestamp': datetime.now().isoformat(),
-                'type': 'outgoing'
-            }
-            messages_data['messages'].append(new_message)
-            save_messages(messages_data)
-            
             return jsonify({
                 'status': 'success',
                 'message': 'Mesaj başarıyla gönderildi',
