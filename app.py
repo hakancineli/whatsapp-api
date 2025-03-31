@@ -29,15 +29,47 @@ def save_messages(messages):
     with open(MESSAGES_FILE, 'w', encoding='utf-8') as f:
         json.dump(messages, f, ensure_ascii=False, indent=2)
 
-# Tüm mesajları getir
-@app.route('/messages', methods=['GET'])
+def get_headers():
+    return {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVJ9.e",
+        "d360-api-key": API_KEY,
+        "Accept": "*/*",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Connection": "keep-alive",
+        "Content-Type": "application/json"
+    }
+
+@app.route('/messages')
 def get_all_messages():
     try:
-        messages_data = load_messages()
-        return jsonify(messages_data)
+        headers = get_headers()
+        
+        print('API isteği yapılıyor:', f"{API_URL}/v1/configs/webhook")
+        print('Headers:', headers)
+        
+        # Messages API'yi çağır
+        response = requests.get(
+            f"{API_URL}/v1/configs/webhook",
+            headers=headers
+        )
+        
+        print('API yanıt durumu:', response.status_code)
+        print('API yanıtı:', response.text)
+        
+        if response.status_code == 200:
+            return jsonify(response.json())
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': f'API Hatası: {response.text}'
+            }), response.status_code
+            
     except Exception as e:
-        print("Mesajları alma hatası:", str(e))
-        return jsonify({"error": str(e)}), 500
+        print('Hata:', str(e))
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
 
 @app.route('/')
 def home():
@@ -53,10 +85,7 @@ def send_message():
         if not phone_number or not message:
             return jsonify({"error": "Telefon numarası ve mesaj gerekli"}), 400
             
-        headers = {
-            "D360-API-KEY": API_KEY,
-            "Content-Type": "application/json"
-        }
+        headers = get_headers()
         
         payload = {
             "messaging_product": "whatsapp",
@@ -69,7 +98,7 @@ def send_message():
         }
         
         response = requests.post(
-            f"{API_URL}/messages",
+            f"{API_URL}/v1/messages",
             headers=headers,
             json=payload
         )
@@ -208,7 +237,7 @@ def test_messages():
         # Önce channels endpoint'ini test edelim
         print('\nChannels testi yapılıyor...')
         channels_response = requests.get(
-            f"{API_URL}/channels",
+            f"{API_URL}/v1/business/channels",
             headers=headers
         )
         print('Channels yanıt durumu:', channels_response.status_code)
@@ -217,7 +246,7 @@ def test_messages():
         # Sonra contacts endpoint'ini test edelim
         print('\nContacts testi yapılıyor...')
         contacts_response = requests.get(
-            f"{API_URL}/contacts",
+            f"{API_URL}/v1/business/contacts",
             headers=headers
         )
         print('Contacts yanıt durumu:', contacts_response.status_code)
@@ -226,7 +255,7 @@ def test_messages():
         # Son olarak messages endpoint'ini test edelim
         print('\nMessages testi yapılıyor...')
         messages_response = requests.get(
-            f"{API_URL}/messages",
+            f"{API_URL}/v1/business/messages",
             headers=headers
         )
         print('Messages yanıt durumu:', messages_response.status_code)
@@ -261,7 +290,7 @@ def test_api():
         
         # Messages API'yi çağır
         response = requests.get(
-            f"{API_URL}/messages",
+            f"{API_URL}/v1/business/messages",
             headers=headers
         )
         
