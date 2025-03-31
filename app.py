@@ -17,7 +17,7 @@ API_KEY = os.getenv('DIALOG_API_KEY')
 API_URL = os.getenv('API_URL')
 
 # Tüm mesajları getir
-@app.route('/messages/all', methods=['GET'])
+@app.route('/messages', methods=['GET'])
 def get_all_messages():
     try:
         print('Tüm mesajlar isteniyor...')
@@ -26,16 +26,16 @@ def get_all_messages():
             "Content-Type": "application/json"
         }
         
-        # Son 1 ay için tarih hesapla
-        bir_ay_once = datetime.now() - timedelta(days=30)
-        bir_ay_once_str = bir_ay_once.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+        # Son 24 saat için tarih hesapla
+        bir_gun_once = datetime.now() - timedelta(days=1)
+        bir_gun_once_str = bir_gun_once.strftime('%Y-%m-%dT%H:%M:%S.000Z')
         
-        print('API isteği yapılıyor:', f"{API_URL}/api/v1/messages?after={bir_ay_once_str}")
+        print('API isteği yapılıyor:', f"{API_URL}/messages")
         print('Headers:', headers)
         
         # Messages API'yi çağır
         response = requests.get(
-            f"{API_URL}/api/v1/messages?after={bir_ay_once_str}",
+            f"{API_URL}/messages",
             headers=headers
         )
         
@@ -44,12 +44,6 @@ def get_all_messages():
         if response.status_code == 200:
             data = response.json()
             print("API Yanıtı:", json.dumps(data, indent=2))
-            
-            if 'messages' in data and isinstance(data['messages'], list):
-                print(f"Toplam mesaj sayısı: {len(data['messages'])}")
-                text_messages = [msg for msg in data['messages'] if msg.get('type') == 'text' and msg.get('text', {}).get('body')]
-                print(f"Text mesaj sayısı: {len(text_messages)}")
-            
             return jsonify(data), 200
         else:
             error_message = f"API Hatası: Status Code {response.status_code}"
@@ -81,7 +75,6 @@ def send_message():
         if not phone_number or not message:
             return jsonify({"error": "Telefon numarası ve mesaj zorunludur"}), 400
 
-        # WhatsApp API'ye istek gönder
         headers = {
             "D360-API-KEY": API_KEY,
             "Content-Type": "application/json"
@@ -89,9 +82,12 @@ def send_message():
         
         payload = {
             "messaging_product": "whatsapp",
+            "recipient_type": "individual",
             "to": phone_number,
             "type": "text",
-            "text": {"body": message}
+            "text": {
+                "body": message
+            }
         }
         
         print('Mesaj gönderiliyor:', payload)
@@ -131,8 +127,18 @@ def webhook():
         data = request.json
         # Gelen mesajları işle
         print("Gelen webhook verisi:", json.dumps(data, indent=2))
+        
+        # Mesaj tipini kontrol et
+        if 'messages' in data:
+            for message in data['messages']:
+                print(f"Mesaj ID: {message.get('id')}")
+                print(f"Gönderen: {message.get('from')}")
+                print(f"Mesaj: {message.get('text', {}).get('body')}")
+                print("------------------------")
+        
         return jsonify({"status": "success"}), 200
     except Exception as e:
+        print("Webhook hatası:", str(e))
         return jsonify({"error": str(e)}), 500
 
 @app.route('/update-webhook', methods=['POST'])
@@ -154,7 +160,7 @@ def update_webhook():
         }
         
         response = requests.post(
-            f"{API_URL}/api/v1/configs/webhook",
+            f"{API_URL}/configs/webhook",
             headers=headers,
             json=payload
         )
@@ -173,7 +179,7 @@ def check_webhook():
         }
         
         response = requests.get(
-            f"{API_URL}/api/v1/configs/webhook",
+            f"{API_URL}/configs/webhook",
             headers=headers
         )
         
@@ -232,6 +238,94 @@ def test_messages():
         error_message = f"Hata: {str(e)}"
         print(error_message)
         return jsonify({"error": error_message}), 500
+
+@app.route('/test-api')
+def test_api():
+    try:
+        headers = {
+            "D360-API-KEY": API_KEY,
+            "Content-Type": "application/json"
+        }
+        
+        print('API testi yapılıyor...')
+        print('API URL:', API_URL)
+        print('Headers:', headers)
+        
+        # Messages API'yi çağır
+        response = requests.get(
+            f"{API_URL}/messages",
+            headers=headers
+        )
+        
+        print('API yanıt durumu:', response.status_code)
+        print('API yanıtı:', response.text)
+        
+        if response.status_code == 200:
+            return jsonify({
+                'status': 'success',
+                'data': response.json()
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': f'API Hatası: Status Code {response.status_code}, Response: {response.text}'
+            }), response.status_code
+            
+    except Exception as e:
+        print('Hata:', str(e))
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/setup-webhook', methods=['POST'])
+def setup_webhook():
+    try:
+        headers = {
+            "D360-API-KEY": API_KEY,
+            "Content-Type": "application/json"
+        }
+        
+        # Webhook URL'sini al (örnek: https://your-domain.com/webhook)
+        webhook_url = request.json.get('url')
+        if not webhook_url:
+            return jsonify({"error": "Webhook URL gerekli"}), 400
+            
+        payload = {
+            "url": webhook_url,
+            "enabled": True
+        }
+        
+        print('Webhook ayarlanıyor:', payload)
+        print('Headers:', headers)
+        
+        response = requests.post(
+            f"{API_URL}/configs/webhook",
+            headers=headers,
+            json=payload
+        )
+        
+        print('API yanıt durumu:', response.status_code)
+        print('API yanıtı:', response.text)
+        
+        if response.status_code == 200:
+            return jsonify({
+                'status': 'success',
+                'message': 'Webhook başarıyla ayarlandı',
+                'data': response.json()
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': f'Webhook ayarlanamadı: {response.text}'
+            }), response.status_code
+            
+    except Exception as e:
+        print('Hata:', str(e))
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

@@ -64,28 +64,24 @@ document.addEventListener('DOMContentLoaded', function() {
     // Mesajları yükle
     async function loadMessages(chat) {
         try {
-            const response = await fetch('/test-messages');
+            const response = await fetch('/messages');
             if (response.ok) {
                 const data = await response.json();
                 console.log('API Yanıtı:', data);
 
-                if (data.messages_data && data.messages_data.messages) {
-                    // Seçili sohbete ait mesajları filtrele
-                    const chatMessages = data.messages_data.messages.filter(msg => 
+                if (data && data.messages) {
+                    const chatMessages = data.messages.filter(msg => 
                         (msg.from === chat.phone || msg.to === chat.phone) && 
                         msg.type === 'text' && 
-                        msg.text && 
-                        msg.text.body
+                        msg.text
                     );
 
-                    // Mesajları tarihe göre sırala
                     const sortedMessages = chatMessages.sort((a, b) => 
                         new Date(a.timestamp) - new Date(b.timestamp)
                     );
 
-                    // Mesajları formatla
                     const formattedMessages = sortedMessages.map(msg => ({
-                        text: msg.text.body,
+                        text: msg.text,
                         type: msg.from === chat.phone ? 'received' : 'sent',
                         time: formatMessageTime(msg.timestamp),
                         timestamp: msg.timestamp
@@ -118,23 +114,23 @@ document.addEventListener('DOMContentLoaded', function() {
     async function loadChats() {
         try {
             console.log('Sohbetler yükleniyor...');
-            const response = await fetch('/test-messages');
+            const response = await fetch('/messages');
             console.log('API yanıt durumu:', response.status);
             const data = await response.json();
             console.log('API yanıtı:', data);
 
-            if (!data.messages_data || !data.messages_data.messages) {
+            if (!data || !data.messages) {
                 console.error('Mesajlar alınamadı veya yanlış format:', data);
                 return;
             }
 
-            const messages = data.messages_data.messages;
+            const messages = data.messages;
             console.log('Toplam mesaj sayısı:', messages.length);
 
             // Mesajları numaralarına göre grupla
             const chatGroups = {};
             messages.forEach(msg => {
-                if (msg.type !== 'text' || !msg.text || !msg.text.body) return;
+                if (msg.type !== 'text' || !msg.text) return;
                 
                 const number = msg.from || msg.to;
                 if (!chatGroups[number]) {
@@ -159,7 +155,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return {
                     phone: group.phone,
                     name: formatPhoneNumber(group.phone),
-                    lastMessage: lastMsg.text.body,
+                    lastMessage: lastMsg.text,
                     time: formatMessageTime(lastMsg.timestamp),
                     messages: sortedMessages,
                     unread: 0
