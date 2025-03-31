@@ -69,7 +69,7 @@ def send_message():
         }
         
         response = requests.post(
-            f"{API_URL}/v1/messages",
+            f"{API_URL}/messages",
             headers=headers,
             json=payload
         )
@@ -105,8 +105,17 @@ def send_message():
             'message': str(e)
         }), 500
 
-@app.route('/webhook', methods=['POST'])
+@app.route('/webhook', methods=['GET', 'POST'])
 def webhook():
+    if request.method == 'GET':
+        # WhatsApp webhook doğrulama
+        mode = request.args.get('hub.mode')
+        token = request.args.get('hub.verify_token')
+        challenge = request.args.get('hub.challenge')
+        
+        print("Webhook doğrulama:", mode, token, challenge)
+        return challenge
+        
     try:
         data = request.json
         print("Gelen webhook verisi:", json.dumps(data, indent=2))
@@ -159,7 +168,7 @@ def update_webhook():
         }
         
         response = requests.post(
-            f"{API_URL}/v1/configs/webhook",
+            f"{API_URL}/configs/webhook",
             headers=headers,
             json=payload
         )
@@ -178,7 +187,7 @@ def check_webhook():
         }
         
         response = requests.get(
-            f"{API_URL}/v1/configs/webhook",
+            f"{API_URL}/configs/webhook",
             headers=headers
         )
         
@@ -199,7 +208,7 @@ def test_messages():
         # Önce channels endpoint'ini test edelim
         print('\nChannels testi yapılıyor...')
         channels_response = requests.get(
-            f"{API_URL}/v1/channels",
+            f"{API_URL}/channels",
             headers=headers
         )
         print('Channels yanıt durumu:', channels_response.status_code)
@@ -208,7 +217,7 @@ def test_messages():
         # Sonra contacts endpoint'ini test edelim
         print('\nContacts testi yapılıyor...')
         contacts_response = requests.get(
-            f"{API_URL}/v1/contacts",
+            f"{API_URL}/contacts",
             headers=headers
         )
         print('Contacts yanıt durumu:', contacts_response.status_code)
@@ -217,7 +226,7 @@ def test_messages():
         # Son olarak messages endpoint'ini test edelim
         print('\nMessages testi yapılıyor...')
         messages_response = requests.get(
-            f"{API_URL}/v1/messages",
+            f"{API_URL}/messages",
             headers=headers
         )
         print('Messages yanıt durumu:', messages_response.status_code)
@@ -252,7 +261,7 @@ def test_api():
         
         # Messages API'yi çağır
         response = requests.get(
-            f"{API_URL}/v1/messages",
+            f"{API_URL}/messages",
             headers=headers
         )
         
@@ -299,7 +308,7 @@ def setup_webhook():
         print('Headers:', headers)
         
         response = requests.post(
-            f"{API_URL}/v1/configs/webhook",
+            f"{API_URL}/configs/webhook",
             headers=headers,
             json=payload
         )
