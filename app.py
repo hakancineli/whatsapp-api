@@ -43,13 +43,14 @@ def get_headers():
 def get_all_messages():
     try:
         headers = get_headers()
+        channel_id = "570676119468253"
         
-        print('API isteği yapılıyor:', f"{API_URL}/v1/messages/notifications")
+        print('API isteği yapılıyor:', f"{API_URL}/v1/channels/{channel_id}/messages")
         print('Headers:', headers)
         
         # Messages API'yi çağır
         response = requests.get(
-            f"{API_URL}/v1/messages/notifications",
+            f"{API_URL}/v1/channels/{channel_id}/messages",
             headers=headers
         )
         
