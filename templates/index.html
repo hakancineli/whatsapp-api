@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp API</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="icon" type="image/png" href="https://static.whatsapp.net/rsrc.php/v3/yP/r/rYZqPCBaG70.png">
+</head>
+<body>
+    <div class="container">
+        <!-- Sol Sidebar -->
+        <div class="sidebar">
+            <div class="header">
+                <div class="user-img">
+                    <img src="https://via.placeholder.com/40/111b21/ffffff?text=WA" alt="Profil">
+                </div>
+                <div class="nav-icons">
+                    <i class="fas fa-users"></i>
+                    <i class="fas fa-circle-notch"></i>
+                    <i class="fas fa-message"></i>
+                    <i class="fas fa-ellipsis-vertical"></i>
+                </div>
+            </div>
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Ara veya yeni sohbet başlat">
+            </div>
+            <div class="chat-list">
+                <!-- Sohbetler buraya dinamik olarak eklenecek -->
+            </div>
+        </div>
+
+        <!-- Ana İçerik -->
+        <div class="main-content">
+            <div class="header">
+                <div class="chat-info">
+                    <div class="user-img">
+                        <img src="https://via.placeholder.com/40/111b21/ffffff?text=WA" alt="Profil">
+                    </div>
+                    <div class="user-name">
+                        <h3>WhatsApp API</h3>
+                        <p>çevrimiçi</p>
+                    </div>
+                </div>
+                <div class="nav-icons">
+                    <i class="fas fa-video"></i>
+                    <i class="fas fa-phone"></i>
+                    <i class="fas fa-search"></i>
+                    <i class="fas fa-ellipsis-vertical"></i>
+                </div>
+            </div>
+
+            <!-- Mesaj Alanı -->
+            <div class="chat-box">
+                <div class="message-list">
+                    <!-- Mesajlar buraya dinamik olarak eklenecek -->
+                </div>
+            </div>
+
+            <!-- Mesaj Gönderme Alanı -->
+            <div class="message-input">
+                <i class="far fa-face-smile"></i>
+                <i class="fas fa-paperclip"></i>
+                <input type="text" id="messageInput" placeholder="Bir mesaj yazın">
+                <i class="fas fa-microphone"></i>
+                <i class="fas fa-paper-plane" id="sendButton"></i>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html> 
