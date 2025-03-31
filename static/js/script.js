@@ -64,14 +64,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Mesajları yükle
     async function loadMessages(chat) {
         try {
-            const response = await fetch(`/messages/all`);
+            const response = await fetch('/test-messages');
             if (response.ok) {
                 const data = await response.json();
                 console.log('API Yanıtı:', data);
 
-                if (data.messages && Array.isArray(data.messages)) {
+                if (data.messages_data && data.messages_data.messages) {
                     // Seçili sohbete ait mesajları filtrele
-                    const chatMessages = data.messages.filter(msg => 
+                    const chatMessages = data.messages_data.messages.filter(msg => 
                         (msg.from === chat.phone || msg.to === chat.phone) && 
                         msg.type === 'text' && 
                         msg.text && 
@@ -118,26 +118,24 @@ document.addEventListener('DOMContentLoaded', function() {
     async function loadChats() {
         try {
             console.log('Sohbetler yükleniyor...');
-            const response = await fetch('/messages/all');
+            const response = await fetch('/test-messages');
             console.log('API yanıt durumu:', response.status);
             const data = await response.json();
-            console.log('API ham yanıtı:', data);
-            
-            if (!data.messages || !Array.isArray(data.messages)) {
+            console.log('API yanıtı:', data);
+
+            if (!data.messages_data || !data.messages_data.messages) {
                 console.error('Mesajlar alınamadı veya yanlış format:', data);
                 return;
             }
 
-            // Mesaj sayısını logla
-            console.log('Toplam mesaj sayısı:', data.messages.length);
-
-            // Text mesajlarını filtrele ve sayısını logla
-            const textMessages = data.messages.filter(msg => msg.type === 'text' && msg.text && msg.text.body);
-            console.log('Text mesajı sayısı:', textMessages.length);
+            const messages = data.messages_data.messages;
+            console.log('Toplam mesaj sayısı:', messages.length);
 
             // Mesajları numaralarına göre grupla
             const chatGroups = {};
-            textMessages.forEach(msg => {
+            messages.forEach(msg => {
+                if (msg.type !== 'text' || !msg.text || !msg.text.body) return;
+                
                 const number = msg.from || msg.to;
                 if (!chatGroups[number]) {
                     chatGroups[number] = {
@@ -150,8 +148,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 chatGroups[number].messages.push(msg);
             });
 
-            // Grup sayısını ve detaylarını logla
-            console.log('Toplam sohbet grubu:', Object.keys(chatGroups).length);
             console.log('Sohbet grupları:', chatGroups);
 
             // Her grup için son mesajı ve zamanı belirle
