@@ -30,12 +30,12 @@ def get_all_messages():
         bir_ay_once = datetime.now() - timedelta(days=30)
         bir_ay_once_str = bir_ay_once.strftime('%Y-%m-%dT%H:%M:%S.000Z')
         
-        print('API isteği yapılıyor:', f"{API_URL}/v1/messages?after={bir_ay_once_str}")
+        print('API isteği yapılıyor:', f"{API_URL}/api/v1/messages?after={bir_ay_once_str}")
         print('Headers:', headers)
         
         # Messages API'yi çağır
         response = requests.get(
-            f"{API_URL}/v1/messages?after={bir_ay_once_str}",
+            f"{API_URL}/api/v1/messages?after={bir_ay_once_str}",
             headers=headers
         )
         
@@ -141,7 +141,7 @@ def update_webhook():
         }
         
         response = requests.post(
-            f"{API_URL}/configs/webhook",
+            f"{API_URL}/api/v1/configs/webhook",
             headers=headers,
             json=payload
         )
@@ -160,8 +160,15 @@ def check_webhook():
         }
         
         response = requests.get(
-            f"{API_URL}/configs/webhook",
+            f"{API_URL}/api/v1/configs/webhook",
             headers=headers
         )
         
- 
+        return jsonify(response.json()), response.status_code
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port) 
