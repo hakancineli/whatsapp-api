@@ -16,50 +16,28 @@ CORS(app)
 API_KEY = os.getenv('DIALOG_API_KEY')
 API_URL = os.getenv('API_URL')
 
+# Mesajları saklamak için basit bir veritabanı sistemi
+MESSAGES_FILE = 'messages.json'
+
+def load_messages():
+    if os.path.exists(MESSAGES_FILE):
+        with open(MESSAGES_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return {'messages': []}
+
+def save_messages(messages):
+    with open(MESSAGES_FILE, 'w', encoding='utf-8') as f:
+        json.dump(messages, f, ensure_ascii=False, indent=2)
+
 # Tüm mesajları getir
 @app.route('/messages', methods=['GET'])
 def get_all_messages():
     try:
-        print('Tüm mesajlar isteniyor...')
-        headers = {
-            "D360-API-KEY": API_KEY,
-            "Content-Type": "application/json"
-        }
-        
-        # Son 24 saat için tarih hesapla
-        bir_gun_once = datetime.now() - timedelta(days=1)
-        bir_gun_once_str = bir_gun_once.strftime('%Y-%m-%dT%H:%M:%S.000Z')
-        
-        print('API isteği yapılıyor:', f"{API_URL}/messages")
-        print('Headers:', headers)
-        
-        # Messages API'yi çağır
-        response = requests.get(
-            f"{API_URL}/messages",
-            headers=headers
-        )
-        
-        print('API yanıt durumu:', response.status_code)
-        
-        if response.status_code == 200:
-            data = response.json()
-            print("API Yanıtı:", json.dumps(data, indent=2))
-            return jsonify(data), 200
-        else:
-            error_message = f"API Hatası: Status Code {response.status_code}"
-            try:
-                error_data = response.json()
-                error_message += f", Response: {json.dumps(error_data)}"
-            except:
-                error_message += f", Response Text: {response.text}"
-            
-            print(error_message)
-            return jsonify({"error": "Mesajlar alınamadı", "details": error_message}), response.status_code
-            
+        messages_data = load_messages()
+        return jsonify(messages_data)
     except Exception as e:
-        error_message = f"Hata: {str(e)}"
-        print(error_message)
-        return jsonify({"error": error_message}), 500
+        print("Mesajları alma hatası:", str(e))
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/')
 def home():
@@ -69,12 +47,12 @@ def home():
 def send_message():
     try:
         data = request.json
-        phone_number = data.get('phone_number')
+        phone_number = data.get('phone')
         message = data.get('message')
         
         if not phone_number or not message:
-            return jsonify({"error": "Telefon numarası ve mesaj zorunludur"}), 400
-
+            return jsonify({"error": "Telefon numarası ve mesaj gerekli"}), 400
+            
         headers = {
             "D360-API-KEY": API_KEY,
             "Content-Type": "application/json"
@@ -90,51 +68,72 @@ def send_message():
             }
         }
         
-        print('Mesaj gönderiliyor:', payload)
-        print('Headers:', headers)
-        
         response = requests.post(
             f"{API_URL}/messages",
             headers=headers,
             json=payload
         )
         
-        print('API yanıt durumu:', response.status_code)
-        print('API yanıt başlıkları:', response.headers)
-        print('API yanıt içeriği:', response.text)
-        
         if response.status_code == 200:
-            return jsonify(response.json()), 200
-        else:
-            error_message = f"API Hatası: Status Code {response.status_code}"
-            try:
-                error_data = response.json()
-                error_message += f", Response: {json.dumps(error_data)}"
-            except:
-                error_message += f", Response Text: {response.text}"
+            # Gönderilen mesajı kaydet
+            messages_data = load_messages()
+            new_message = {
+                'id': response.json().get('messages', [{}])[0].get('id', ''),
+                'to': phone_number,
+                'text': message,
+                'timestamp': datetime.now().isoformat(),
+                'type': 'outgoing'
+            }
+            messages_data['messages'].append(new_message)
+            save_messages(messages_data)
             
-            print(error_message)
-            return jsonify({"error": "Mesaj gönderilemedi", "details": error_message}), response.status_code
-        
+            return jsonify({
+                'status': 'success',
+                'message': 'Mesaj başarıyla gönderildi',
+                'data': response.json()
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': f'Mesaj gönderilemedi: {response.text}'
+            }), response.status_code
+            
     except Exception as e:
-        error_message = f"Hata: {str(e)}"
-        print(error_message)
-        return jsonify({"error": error_message}), 500
+        print('Hata:', str(e))
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
     try:
         data = request.json
-        # Gelen mesajları işle
         print("Gelen webhook verisi:", json.dumps(data, indent=2))
+        
+        # Mesajları yükle
+        messages_data = load_messages()
         
         # Mesaj tipini kontrol et
         if 'messages' in data:
             for message in data['messages']:
-                print(f"Mesaj ID: {message.get('id')}")
-                print(f"Gönderen: {message.get('from')}")
-                print(f"Mesaj: {message.get('text', {}).get('body')}")
+                # Yeni mesajı ekle
+                new_message = {
+                    'id': message.get('id'),
+                    'from': message.get('from'),
+                    'text': message.get('text', {}).get('body', ''),
+                    'timestamp': datetime.now().isoformat(),
+                    'type': 'incoming'
+                }
+                messages_data['messages'].append(new_message)
+                
+                print(f"Mesaj ID: {new_message['id']}")
+                print(f"Gönderen: {new_message['from']}")
+                print(f"Mesaj: {new_message['text']}")
                 print("------------------------")
+        
+        # Mesajları kaydet
+        save_messages(messages_data)
         
         return jsonify({"status": "success"}), 200
     except Exception as e:
